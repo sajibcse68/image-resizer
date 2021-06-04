@@ -1,9 +1,17 @@
 const express = require('express');
 const app = express();
-const port = 3000;
+var multer = require('multer');
+const helpers = require('./helpers');
+
+var upload = multer();
+const port = 3001;
 
 // load config
 require('dotenv').config();
+
+// allow cors for all routes
+const cors = require('cors');
+app.use(cors());
 
 // configure AWS
 const AWS = require('aws-sdk');
@@ -16,14 +24,55 @@ const sqs = new AWS.SQS({
   secretAccessKey: process.env.SECRET_ACCESS_KEY,
 });
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+
+  // By default, multer removes file extensions so let's add them back
+  filename: function (req, file, cb) {
+    const { fieldname, originalname } = file;
+    cb(null, `${fieldname}-${Date.now()}-${file.originalname}`);
+  },
+});
+
 // ************** API routes *******************
-app.get('/', (req, res) => {
+app.get('/api/', (req, res) => {
   res.send('Hello World!');
 });
 
-app.get('/send', (req, res) => {
-  sendMessage();
-  res.send('Successfully added message in SQS');
+app.post('/api/resize', (req, res) => {
+  let upload = multer({
+    storage: storage,
+    fileFilter: helpers.imageFilter,
+  }).array('image', 10);
+
+  try {
+    upload(req, res, function (err) {
+      if (err) {
+        res.send(err);
+      }
+      console.log('>>> err: ', err);
+      if (req.fileValidationError) {
+        return res.send(req.fileValidationError);
+      }
+      let result = 'You have uploaded these images: <hr />';
+      const files = req.files;
+      let index, len;
+
+      // Loop through all the uploaded images and display them on frontend
+      for (index = 0, len = files.length; index < len; ++index) {
+        result += `<img src="${files[index].path}" width="300" style="margin-right: 20px;">`;
+      }
+      result += '<hr/><a href="./">Upload more images</a>';
+      res.send(result);
+    });
+  } catch (error) {
+    res.send('>>> error /resize: ', error);
+  }
+
+  // sendMessage();
+  // res.send('Successfully added message in SQS');
 });
 
 // *********************************************

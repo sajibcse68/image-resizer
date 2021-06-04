@@ -1,7 +1,7 @@
-import axios from 'axios';
 import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Button, ButtonGroup, ToggleButton } from 'react-bootstrap';
+import $axios from './../utils/axios';
 
 import './../assets/styles/Home.css';
 
@@ -13,7 +13,7 @@ const radios = [
 
 class App extends Component {
   state = {
-    selectedFiles: null,
+    selectedFiles: {},
     smallerVal: '25',
   };
 
@@ -22,12 +22,32 @@ class App extends Component {
     this.setState({ selectedFiles: event.target.files });
   };
 
-  // clicking on the resize button
-  onFileUpload = () => {
+  // On file upload (click the upload button)
+  onFileUpload = async () => {
+    // formData instance
+    const images = new FormData();
+    const { selectedFiles } = this.state;
+
+    // images.append
+    Object.values(selectedFiles).forEach((file, index) => {
+      images.append('image', file, `${file.name}`);
+    });
+
+    // Details of the uploaded file
+    console.log(this.state.selectedFiles);
+
+    // Request made to the backend api
+    // Send formData object
+    const res = await $axios.post('resize', images, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    console.log('>>> res: ', res);
   };
 
-  // File content to be displayed after
-  // file upload is complete
+  // Display file content after file upload is complete
   fileData = () => {
     const { selectedFiles } = this.state;
 

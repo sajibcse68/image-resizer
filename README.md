@@ -23,7 +23,7 @@ Your app is ready to be deployed!
 See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
 
-# Run Server
+# Setup Server
 
 ### Config file
 Create a `.env` file in the root directory of the project and add variables in the form of `NAME=VALUE`
@@ -31,4 +31,10 @@ Create a `.env` file in the root directory of the project and add variables in t
 ```sh
 ACCESS_KEY=<access_key>
 SECRET_ACCESS_KEY=<secret_access_key>
+```
+
+### Run the Server
+
+```sh
+$ npm run server
 ```
