@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Button, ButtonGroup, ToggleButton } from 'react-bootstrap';
+import jwt from 'jwt-simple';
 import $axios from './../utils/axios';
 
 import './../assets/styles/Home.css';
@@ -28,9 +29,16 @@ class App extends Component {
     const images = new FormData();
     const { selectedFiles } = this.state;
 
+    const selectedFilesArr = Object.values(selectedFiles);
+
+    const total = selectedFilesArr?.length || 0;
+
+    // generate jwt token with payload
+    var token = jwt.encode({ total }, 'sajib');
+
     // images.append
-    Object.values(selectedFiles).forEach((file, index) => {
-      images.append('image', file, `${file.name}`);
+    selectedFilesArr.forEach((file, index) => {
+      images.append('image', file, `${token}_${1}.${file.name.split('.').pop()}`);
     });
 
     // Details of the uploaded file

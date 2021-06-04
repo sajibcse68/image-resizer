@@ -1,6 +1,8 @@
 const express = require('express');
 const app = express();
-var multer = require('multer');
+const multer = require('multer');
+const jwt = require('jwt-simple');
+
 const helpers = require('./helpers');
 
 var upload = multer();
@@ -17,11 +19,20 @@ app.use(cors());
 const AWS = require('aws-sdk');
 AWS.config.update({ region: 'us-east-1' });
 
+const AwsKeys = {
+  accessKeyId: process.env.ACCESS_KEY,
+  secretAccessKey: process.env.SECRET_ACCESS_KEY,
+};
+
 // Create SQS service client
 const sqs = new AWS.SQS({
   apiVersion: '2012-11-05',
-  accessKeyId: process.env.ACCESS_KEY,
-  secretAccessKey: process.env.SECRET_ACCESS_KEY,
+  ...AwsKeys,
+});
+
+// s3 instance
+const s3 = new AWS.S3({
+  ...AwsKeys,
 });
 
 const storage = multer.diskStorage({
@@ -32,7 +43,7 @@ const storage = multer.diskStorage({
   // By default, multer removes file extensions so let's add them back
   filename: function (req, file, cb) {
     const { fieldname, originalname } = file;
-    cb(null, `${fieldname}-${Date.now()}-${file.originalname}`);
+    cb(null, `${file.originalname}`);
   },
 });
 
@@ -50,14 +61,20 @@ app.post('/api/resize', (req, res) => {
   try {
     upload(req, res, function (err) {
       if (err) {
-        res.send(err);
+        throw err;
       }
-      console.log('>>> err: ', err);
+
       if (req.fileValidationError) {
         return res.send(req.fileValidationError);
       }
       let result = 'You have uploaded these images: <hr />';
       const files = req.files;
+
+      // decode jwt
+      const token = files[0].originalname.split('_')[0];
+      const decoded = jwt.decode(token, 'sajib');
+      console.log('>>> decoded: ', decoded); // { total: 3 }
+
       let index, len;
 
       // Loop through all the uploaded images and display them on frontend
@@ -65,13 +82,15 @@ app.post('/api/resize', (req, res) => {
         result += `<img src="${files[index].path}" width="300" style="margin-right: 20px;">`;
       }
       result += '<hr/><a href="./">Upload more images</a>';
+
+      // send image token in SQS
+      sendMessage(token);
+
       res.send(result);
     });
   } catch (error) {
     res.send('>>> error /resize: ', error);
   }
-
-  // sendMessage();
   // res.send('Successfully added message in SQS');
 });
 
@@ -81,12 +100,11 @@ const accountId = '799513362811';
 const queueName = 'im-homework';
 
 // Setup the sendMessage()
-const sendMessage = () => {
+const sendMessage = (token) => {
   const params = {
     MessageBody: JSON.stringify({
-      user_id: '1122',
-      image_url: 'test_url',
-      public: true,
+      image_token: token,
+      // public: true,
       date: new Date().toISOString(),
     }),
     QueueUrl: `https://sqs.us-east-1.amazonaws.com/${accountId}/${queueName}`,
