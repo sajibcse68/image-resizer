@@ -34,11 +34,15 @@ class App extends Component {
     const total = selectedFilesArr?.length || 0;
 
     // generate jwt token with payload
-    var token = jwt.encode({ total }, 'sajib');
+    var token = jwt.encode({ key: Date.now(), total }, 'sajib');
 
     // images.append
     selectedFilesArr.forEach((file, index) => {
-      images.append('image', file, `${token}_${index}.${file.name.split('.').pop()}`);
+      images.append(
+        'image',
+        file,
+        `${token}_${index}.${file.name.split('.').pop()}`
+      );
     });
 
     // Details of the uploaded file

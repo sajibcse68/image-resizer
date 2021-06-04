@@ -19,7 +19,7 @@ app.use(cors());
 const AWS = require('aws-sdk');
 AWS.config.update({ region: 'us-east-1' });
 
-const AwsKeys = {
+const awsKeys = {
   accessKeyId: process.env.ACCESS_KEY,
   secretAccessKey: process.env.SECRET_ACCESS_KEY,
 };
@@ -27,7 +27,7 @@ const AwsKeys = {
 // Create SQS service client
 const sqs = new AWS.SQS({
   apiVersion: '2012-11-05',
-  ...AwsKeys,
+  ...awsKeys,
 });
 
 // ***** to save the files in disk *****
@@ -44,7 +44,7 @@ const sqs = new AWS.SQS({
 
 // s3 instance
 const s3 = new AWS.S3({
-  ...AwsKeys,
+  ...awsKeys,
 });
 
 // store in S3 bucket
