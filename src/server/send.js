@@ -1,11 +1,11 @@
 const express = require('express');
 const app = express();
 const multer = require('multer');
+var multerS3 = require('multer-s3');
 const jwt = require('jwt-simple');
 
 const helpers = require('./helpers');
 
-var upload = multer();
 const port = 3001;
 
 // load config
@@ -30,20 +30,33 @@ const sqs = new AWS.SQS({
   ...AwsKeys,
 });
 
+// ***** to save the files in disk *****
+// const diskStorage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, 'uploads/');
+//   },
+
+//   filename: function (req, file, cb) {
+//     const { fieldname, originalname } = file;
+//     cb(null, `${originalname}`);
+//   },
+// });
+
 // s3 instance
 const s3 = new AWS.S3({
   ...AwsKeys,
 });
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+// store in S3 bucket
+const s3Storage = multerS3({
+  s3: s3,
+  bucket: 'im-homework',
+  public: 'yes',
+  metadata: function (req, file, cb) {
+    cb(null, { fieldName: file.fieldname });
   },
-
-  // By default, multer removes file extensions so let's add them back
-  filename: function (req, file, cb) {
-    const { fieldname, originalname } = file;
-    cb(null, `${file.originalname}`);
+  key: function (req, file, cb) {
+    cb(null, file.originalname);
   },
 });
 
@@ -53,8 +66,10 @@ app.get('/api/', (req, res) => {
 });
 
 app.post('/api/resize', (req, res) => {
+  console.log('>>> req.files: ', req.files);
+
   let upload = multer({
-    storage: storage,
+    storage: s3Storage,
     fileFilter: helpers.imageFilter,
   }).array('image', 10);
 

@@ -38,7 +38,7 @@ class App extends Component {
 
     // images.append
     selectedFilesArr.forEach((file, index) => {
-      images.append('image', file, `${token}_${1}.${file.name.split('.').pop()}`);
+      images.append('image', file, `${token}_${index}.${file.name.split('.').pop()}`);
     });
 
     // Details of the uploaded file
