@@ -84,9 +84,10 @@ app.post('/api/resize', (req, res) => {
       }
       let result = 'You have uploaded these images: <hr />';
       const files = req.files;
+      const orig = files[0].originalname;
 
       // decode jwt
-      const token = files[0].originalname.split('_')[0];
+      let token = orig.substr(0, orig.lastIndexOf('_'));
 
       // **** test decoding, retrieve payload from the token
       // const decoded = jwt.decode(token, 'sajib');
@@ -101,10 +102,7 @@ app.post('/api/resize', (req, res) => {
       result += '<hr/><a href="./">Upload more images</a>';
 
 
-      setTimeout(() => {
-        // send image token in SQS
-        sendMessage(token);
-      }, 2000);
+      sendMessage(token);
 
       res.send(result);
     });

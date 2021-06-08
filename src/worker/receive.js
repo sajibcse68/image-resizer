@@ -67,7 +67,6 @@ const doResize = async (token) => {
   for (let i = 0; i < total; i++) {
     const key = genKey + i + '.' + extensions[i];
 
-    console.log('>>> key: ', key);
     const image = await s3.getObject({ Bucket: bucket, Key: key }).promise();
 
     const resizedImg = await sharp(image.Body)
