@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import styled from 'styled-components';
-import { Button, ButtonGroup, ToggleButton } from 'react-bootstrap';
-import jwt from 'jwt-simple';
+import { Button, Spinner } from 'react-bootstrap';
 import $axios from './../utils/axios';
 
 import './../assets/styles/Home.css';
@@ -12,70 +11,96 @@ const radios = [
   { name: 'Large (250x250)', value: '250' },
 ];
 
+let intervalId = null;
+let count = 0;
+
 class App extends Component {
   state = {
     loader: true,
+    imageUrls: [],
+    error: false,
   };
 
   componentDidMount() {
-    this.getImages();
+    intervalId = setInterval(this.getImages, 2500);
   }
 
-  getImages = async() => {
+  getImages = async () => {
     const { token } = this.props.match.params;
     const resp = await $axios.get(`images/${token}`);
-    console.log('______ resp: ', resp)
-  }
+    const data = (resp?.data && Object.values(resp.data)) || [];
 
-  setLoader = val => {
+    // count the try, at most 5 try
+    count++;
+    console.log('>>> count: ', count);
+
+    let hasAllUrls = true;
+
+    data.forEach((url) => {
+      if (!url) hasAllUrls = false;
+    });
+
+    if (hasAllUrls) {
+      this.setState({
+        loader: false,
+        imageUrls: data,
+      });
+
+      clearInterval(intervalId);
+    } else if (count > 5) {
+      clearInterval(intervalId);
+      this.setState({
+        loader: false,
+        error: true,
+      });
+    }
+  };
+
+  setLoader = (val) => {
     this.setState({
       loader: val,
     });
   };
 
   render() {
-    const { smallerVal } = this.state;
+    const { loader, imageUrls, error } = this.state;
+
+    if (loader) {
+      return (
+        <Styled.SpinnerWrap>
+          <Button variant="primary" disabled>
+            <Spinner
+              as="span"
+              animation="grow"
+              size="sm"
+              role="status"
+              aria-hidden="true"
+            />
+            Resizing...
+          </Button>
+        </Styled.SpinnerWrap>
+      );
+    }
+
+    if (error) {
+      return <h1>Something went wrong. Please try again!</h1>;
+    }
 
     return (
       <div className="home">
         <Styled.HomeLeft>
           <h1>Resize IMAGE</h1>
           <h3>Resize JPG, PNG by defining new height and width pixels.</h3>
-          <Styled.UploaderWrap>
-            <Styled.InputWrap>
-              <input type="file" multiple onChange={this.onFileChange} />
-              Select Images
-            </Styled.InputWrap>
-          </Styled.UploaderWrap>
+
+          {imageUrls.map((url, index) => (
+            <a href={url} download={url} target="_blank">
+              Download Image {index + 1}{' '}
+            </a>
+          ))}
+          <Styled.UploaderWrap></Styled.UploaderWrap>
         </Styled.HomeLeft>
 
-        <Styled.HomeRight>
-          <ButtonGroup toggle>
-            {radios.map((radio, idx) => (
-              <ToggleButton
-                key={idx}
-                type="radio"
-                variant="secondary"
-                name="radio"
-                value={radio.value}
-                checked={smallerVal === radio.value}
-                onChange={(e) => this.setSmallerValue(e.currentTarget.value)}
-              >
-                {radio.name}
-              </ToggleButton>
-            ))}
-          </ButtonGroup>
-          <Styled.ResizeBtnWrap>
-            <Button
-              variant="primary"
-              size="lg"
-              block
-              onClick={this.onFileUpload}
-            >
-              Resize!
-            </Button>
-          </Styled.ResizeBtnWrap>
-        </Styled.HomeRight>
+        <Styled.HomeRight></Styled.HomeRight>
       </div>
     );
   }
@@ -84,6 +109,12 @@ class App extends Component {
 export default App;
 
 const Styled = {};
+
+Styled.SpinnerWrap = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+`;
 
 Styled.HomeLeft = styled.div`
   display: flex;
@@ -102,22 +133,4 @@ Styled.HomeRight = styled.div`
 Styled.UploaderWrap = styled.div`
   display: flex;
   flex-direction: row;
-`;
-
-Styled.InputWrap = styled.label`
-  border: 1px solid #ccc;
-  // display: inline-block;
-  padding: 26px 70px;
-  cursor: pointer;
-  color: #fff;
-  background-color: #0fa894;
-  border-radius: 10px;
-
-  &:hover {
-    background-color: #000;
-  }
-`;
-
-Styled.ResizeBtnWrap = styled.div`
-  margin-top: 30px;
 `;

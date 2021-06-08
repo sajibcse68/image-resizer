@@ -116,7 +116,7 @@ app.get('/api/images/:token', async (req, res) => {
 
   const resizedImages = await h.getImagesHandler(token);
 
-  res.send(resizedImages);
+  res.json(resizedImages);
 });
 
 // *********************************************
