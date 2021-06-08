@@ -38,3 +38,9 @@ SECRET_ACCESS_KEY=<secret_access_key>
 ```sh
 $ npm run server
 ```
+
+### Run the Worker
+
+```sh
+$ npm run worker
+```

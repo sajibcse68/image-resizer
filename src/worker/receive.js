@@ -6,7 +6,6 @@ const { Consumer } = require('sqs-consumer');
 const AWS = require('aws-sdk');
 const jwt = require('jwt-simple');
 
-
 // load config
 require('dotenv').config();
 
@@ -47,7 +46,6 @@ const app = Consumer.create({
 });
 
 const doResize = async (token) => {
-
   // decode the payload without verify the signature of the token
   const payload = jwt.decode(token, 'sajib', true);
   const { key, size, extensions, total } = payload;
@@ -70,15 +68,17 @@ const doResize = async (token) => {
     const image = await s3.getObject({ Bucket: bucket, Key: key }).promise();
 
     const resizedImg = await sharp(image.Body)
-    .resize(size, size)
-    .toFormat(extensions[i])
-    .toBuffer();
+      .resize(size, size)
+      .toFormat(extensions[i])
+      .toBuffer();
 
     const updated = await s3
       .putObject({
         Bucket: bucket,
         Body: resizedImg,
         Key: `${token}_${i}_resized.${extensions[i]}`,
+        ContentType: 'image/jpeg',
+        // public: 'yes'
       })
       .promise();
   }

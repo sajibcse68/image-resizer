@@ -5,6 +5,7 @@ var multerS3 = require('multer-s3');
 const jwt = require('jwt-simple');
 
 const helpers = require('./helpers');
+const h = require('./handlers');
 
 const port = 3001;
 
@@ -63,11 +64,10 @@ const s3Storage = multerS3({
 
 // ************** API routes *******************
 app.get('/api/', (req, res) => {
-  res.send('Hello World!');
+  res.send('Hello Sajib!');
 });
 
 app.post('/api/resize', (req, res) => {
-
   let upload = multer({
     storage: s3Storage,
     fileFilter: helpers.imageFilter,
@@ -101,7 +101,6 @@ app.post('/api/resize', (req, res) => {
       }
       result += '<hr/><a href="./">Upload more images</a>';
 
-
       sendMessage(token);
 
       res.send(result);
@@ -110,6 +109,14 @@ app.post('/api/resize', (req, res) => {
     res.send('>>> error /resize: ', error);
   }
   // res.send('Successfully added message in SQS');
+});
+
+app.get('/api/images/:token', async (req, res) => {
+  const { token } = req.params;
+
+  const resizedImages = await h.getImagesHandler(token);
+
+  res.send(resizedImages);
 });
 
 // *********************************************

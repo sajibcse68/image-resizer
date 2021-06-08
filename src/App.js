@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Switch } from 'react-router-dom';
 import Home from './components/Home';
+import Download from './components/Download';
 
 // css
 import './App.css';
@@ -11,6 +12,7 @@ function App() {
       <main>
         <Switch>
           <Route path="/" component={Home} exact />
+          <Route path="/download/:token" component={Download} exact />
         </Switch>
       </main>
     </div>

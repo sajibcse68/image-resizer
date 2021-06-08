@@ -14,86 +14,22 @@ const radios = [
 
 class App extends Component {
   state = {
-    selectedFiles: {},
-    smallerVal: '85',
+    loader: true,
   };
 
-  // file select (from the pop up)
-  onFileChange = (event) => {
-    this.setState({ selectedFiles: event.target.files });
-  };
+  componentDidMount() {
+    this.getImages();
+  }
 
-  // On file upload (click the upload button)
-  onFileUpload = async () => {
-    // formData instance
-    const images = new FormData();
-    const { selectedFiles, smallerVal } = this.state;
+  getImages = async() => {
+    const { token } = this.props.match.params;
+    const resp = await $axios.get(`images/${token}`);
+    console.log('______ resp: ', resp)
+  }
 
-    const selectedFilesArr = Object.values(selectedFiles);
-
-    const total = selectedFilesArr?.length || 0;
-
-    const extensions = [];
-    selectedFilesArr.forEach(file => {
-      extensions.push(file.name.split('.').pop());
-    })
-
-    // generate jwt token with payload
-    var token = jwt.encode({ key: Date.now(), size: +smallerVal, extensions, total }, 'sajib');
-
-    // images.append
-    selectedFilesArr.forEach((file, index) => {
-      images.append(
-        'image',
-        file,
-        `${token}_${index}.${extensions[index]}`
-      );
-    });
-
-    // Details of the uploaded file
-    console.log(this.state.selectedFiles);
-
-    // Request made to the backend api
-    // Send formData object
-    const res = await $axios.post('resize', images, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    console.log('>>> res: ', res);
-
-    this.props.history.push(`/download/${token}`);
-  };
-
-  // Display file content after file upload is complete
-  fileData = () => {
-    const { selectedFiles } = this.state;
-
-    if (selectedFiles?.length) {
-      return Object.values(selectedFiles).map((file) => {
-        return (
-          <div>
-            <h2>File Details:</h2>
-            <p>File Name: {file.name}</p>
-            <p>File Type: {file.type}</p>
-            <p>Last Modified: {file.lastModifiedDate.toDateString()}</p>
-          </div>
-        );
-      });
-    } else {
-      return (
-        <div>
-          <br />
-          <h4>Choose before Pressing the Upload button</h4>
-        </div>
-      );
-    }
-  };
-
-  setSmallerValue = (val) => {
+  setLoader = val => {
     this.setState({
-      smallerVal: val,
+      loader: val,
     });
   };
 
@@ -111,8 +47,6 @@ class App extends Component {
               Select Images
             </Styled.InputWrap>
           </Styled.UploaderWrap>
-
-          {this.fileData()}
         </Styled.HomeLeft>
 
         <Styled.HomeRight>
