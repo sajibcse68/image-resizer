@@ -1,8 +1,11 @@
 const https = require('https');
+const sharp = require('sharp');
 const port = 3000;
 
 const { Consumer } = require('sqs-consumer');
 const AWS = require('aws-sdk');
+const jwt = require('jwt-simple');
+
 
 // load config
 require('dotenv').config();
@@ -17,6 +20,8 @@ AWS.config.update({
   region: 'us-east-1',
   ...awsKeys,
 });
+
+const s3 = new AWS.S3();
 
 const accountId = '799513362811';
 const queueName = 'im-homework';
@@ -34,42 +39,51 @@ const app = Consumer.create({
   }),
   handleMessage: async (message) => {
     // do some work with `message`
-    console.log('>>> message: ', message.Body);
+    const token = JSON.parse(message.Body).image_token;
+
+    // resize image(s)
+    doResize(token);
   },
 });
 
-// Create SQS service object
-// const sqs = new AWS.SQS({
-//   apiVersion: '2012-11-05',
-// });
+const doResize = async (token) => {
 
-// Replace with your accountid and the queue name you setup
+  // decode the payload without verify the signature of the token
+  const payload = jwt.decode(token, 'sajib', true);
+  const { key, size, extensions, total } = payload;
 
-// Setup the receiveMessage parameters
-// const params = {
-//   QueueUrl: queueUrl,
-//   MaxNumberOfMessages: 1,
-//   VisibilityTimeout: 0,
-//   WaitTimeSeconds: 0,
-// };
+  console.log(
+    ' > size: ',
+    size,
+    '> extensions: ',
+    extensions,
+    '> total: ',
+    total
+  );
 
-// sqs.receiveMessage(params, (err, data) => {
-//   console.log('>>> inside receiveMessage');
-//   if (err) {
-//     console.log(err, err.stack);
-//   } else {
-//     if (!data.Messages) {
-//       console.log('Nothing to process');
-//       return;
-//     }
+  const bucket = 'im-homework';
+  const genKey = `${token}_`;
 
-//     const orderData = JSON.parse(data.Messages[0].Body);
-//     console.log('Order received', orderData);
+  for (let i = 0; i < total; i++) {
+    const key = genKey + i + '.' + extensions[i];
 
-//     // orderData is now an object that contains order_id and date properties
-//     // Lookup order data from data storage
-//     // Execute billing for order
-//     // Update data storage
+    console.log('>>> key: ', key);
+    const image = await s3.getObject({ Bucket: bucket, Key: key }).promise();
+
+    const resizedImg = await sharp(image.Body)
+    .resize(size, size)
+    .toFormat(extensions[i])
+    .toBuffer();
+
+    const updated = await s3
+      .putObject({
+        Bucket: bucket,
+        Body: resizedImg,
+        Key: `${token}_${i}_resized.${extensions[i]}`,
+      })
+      .promise();
+  }
+};
 
 //     // Now we must delete the message so we don't handle it again
 //     const deleteParams = {

@@ -52,6 +52,7 @@ const s3Storage = multerS3({
   s3: s3,
   bucket: 'im-homework',
   public: 'yes',
+  // acl: 'public-read-write',
   metadata: function (req, file, cb) {
     cb(null, { fieldName: file.fieldname });
   },
@@ -66,7 +67,6 @@ app.get('/api/', (req, res) => {
 });
 
 app.post('/api/resize', (req, res) => {
-  console.log('>>> req.files: ', req.files);
 
   let upload = multer({
     storage: s3Storage,
@@ -87,8 +87,10 @@ app.post('/api/resize', (req, res) => {
 
       // decode jwt
       const token = files[0].originalname.split('_')[0];
-      const decoded = jwt.decode(token, 'sajib');
-      console.log('>>> decoded: ', decoded); // { total: 3 }
+
+      // **** test decoding, retrieve payload from the token
+      // const decoded = jwt.decode(token, 'sajib');
+      // console.log('>>> decoded: ', decoded); // { total: 3 }
 
       let index, len;
 
@@ -98,8 +100,11 @@ app.post('/api/resize', (req, res) => {
       }
       result += '<hr/><a href="./">Upload more images</a>';
 
-      // send image token in SQS
-      sendMessage(token);
+
+      setTimeout(() => {
+        // send image token in SQS
+        sendMessage(token);
+      }, 2000);
 
       res.send(result);
     });

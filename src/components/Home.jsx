@@ -7,15 +7,15 @@ import $axios from './../utils/axios';
 import './../assets/styles/Home.css';
 
 const radios = [
-  { name: '25% smaller', value: '25' },
-  { name: '50% smaller', value: '50' },
-  { name: '75% smaller', value: '75' },
+  { name: 'Small (85x85)', value: '85' },
+  { name: 'Medium (160x160)', value: '160' },
+  { name: 'Large (250x250)', value: '250' },
 ];
 
 class App extends Component {
   state = {
     selectedFiles: {},
-    smallerVal: '25',
+    smallerVal: '85',
   };
 
   // file select (from the pop up)
@@ -27,21 +27,26 @@ class App extends Component {
   onFileUpload = async () => {
     // formData instance
     const images = new FormData();
-    const { selectedFiles } = this.state;
+    const { selectedFiles, smallerVal } = this.state;
 
     const selectedFilesArr = Object.values(selectedFiles);
 
     const total = selectedFilesArr?.length || 0;
 
+    const extensions = [];
+    selectedFilesArr.forEach(file => {
+      extensions.push(file.name.split('.').pop());
+    })
+
     // generate jwt token with payload
-    var token = jwt.encode({ key: Date.now(), total }, 'sajib');
+    var token = jwt.encode({ key: Date.now(), size: +smallerVal, extensions, total }, 'sajib');
 
     // images.append
     selectedFilesArr.forEach((file, index) => {
       images.append(
         'image',
         file,
-        `${token}_${index}.${file.name.split('.').pop()}`
+        `${token}_${index}.${extensions[index]}`
       );
     });
 
