@@ -1,5 +1,10 @@
 # Image Resizer
 
+Recording Demo:  
+.  
+![caption](./demo/image-resizer-demo.gif)
+
+
 ## Available Scripts
 
 In the project directory, you can run:

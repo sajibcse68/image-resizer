@@ -2,14 +2,9 @@ import React, { Component } from 'react';
 import styled from 'styled-components';
 import { Button, Spinner } from 'react-bootstrap';
 import $axios from './../utils/axios';
+import jwt from 'jwt-simple';
 
 import './../assets/styles/Home.css';
-
-const radios = [
-  { name: 'Small (85x85)', value: '85' },
-  { name: 'Medium (160x160)', value: '160' },
-  { name: 'Large (250x250)', value: '250' },
-];
 
 let intervalId = null;
 let count = 0;
@@ -17,7 +12,7 @@ let count = 0;
 class App extends Component {
   state = {
     loader: true,
-    imageUrls: [],
+    images: [],
     error: false,
   };
 
@@ -32,18 +27,18 @@ class App extends Component {
 
     // count the try, at most 5 try
     count++;
-    console.log('>>> count: ', count);
 
-    let hasAllUrls = true;
+    let hasAllImages = true;
 
     data.forEach((url) => {
-      if (!url) hasAllUrls = false;
+      if (!url) hasAllImages = false;
     });
 
-    if (hasAllUrls) {
+    // check if all images exists
+    if (hasAllImages) {
       this.setState({
         loader: false,
-        imageUrls: data,
+        images: data,
       });
 
       clearInterval(intervalId);
@@ -62,8 +57,27 @@ class App extends Component {
     });
   };
 
+  handleDownload = async ({ e, url, ind }) => {
+    e.preventDefault();
+
+    try {
+      const { token } = this.props.match.params;
+      const payload = jwt.decode(token, 'sajib', true);
+      const { key, size, extensions, total } = payload;
+
+      var a = document.createElement('a'); //Create <a>
+      a.href = 'data:image/png;base64,' + url; // set href attr with base64 img
+      a.download = `image-${ind + 1}.${extensions[ind]}`; // file name with extension
+      a.click(); // download the image
+
+    } catch (error) {
+      console.log('error: ', error);
+      debugger;
+    }
+  };
+
   render() {
-    const { loader, imageUrls, error } = this.state;
+    const { loader, images, error } = this.state;
 
     if (loader) {
       return (
@@ -83,19 +97,24 @@ class App extends Component {
     }
 
     if (error) {
-      return <h1>Something went wrong. Please try again!</h1>;
+      return <h1 style={{ display: 'flex', flexBasis: 'center'}}>Something went wrong. Please try again!</h1>;
     }
 
     return (
       <div className="home">
         <Styled.HomeLeft>
-          <h1>Resize IMAGE</h1>
-          <h3>Resize JPG, PNG by defining new height and width pixels.</h3>
+          <h1>Ready to Download</h1>
 
-          {imageUrls.map((url, index) => (
-            <a href={url} download={url} target="_blank">
-              Download Image {index + 1}{' '}
-            </a>
+          {images.map((url, ind) => (
+            <>
+              <Button
+                key={url}
+                onClick={(e) => this.handleDownload({ e, url, ind })}
+              >
+                Download Image {ind + 1}{' '}
+              </Button>
+              <br />
+            </>
           ))}
           <Styled.UploaderWrap></Styled.UploaderWrap>
         </Styled.HomeLeft>
