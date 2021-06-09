@@ -5,6 +5,19 @@ Recording Demo:
 ![caption](./demo/image-resizer-demo.gif)
 
 
+## The Work Flow
+
+- Upload the image(s) and do api call with `jwt token` to server (client)
+- Upload the images in S3 bucket (server)
+- Push the `token` (message) to SQS (server)
+- Get the `token` from SQS and retrieve the payload info (worker)
+- Resize the image and upload the resized image in S3 again (worker)
+- Do api call for resized image(s) to server (client)
+- Retrieve the image(s) from S3 and send to client (server)
+- Get the image(s) and ready for download (client)
+- Done! 
+
+
 ## Available Scripts
 
 In the project directory, you can run:
